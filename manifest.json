@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "A11y Fix-It Assistant",
+  "version": "1.0",
+  "description": "Identifies common accessibility issues and suggests interactive fixes.",
+  "icons": {
+  },
+  "permissions": ["activeTab", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+    }
+  },
+  "host_permissions": ["<all_urls>"]
+}
