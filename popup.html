@@ -1,97 +1,692 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A11y Fix-It Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 300px;
-            padding: 10px;
-            background-color: #f4f7f6;
-            color: #333;
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        h3 {
-            color: #2c3e50;
-            margin-top: 0;
+
+        body {
+            width: 380px;
+            min-height: 500px;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #e0f2fe 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.875rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .scan-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .scan-btn {
+            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .scan-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .scan-btn .spinner {
+            display: none;
+        }
+
+        .scan-btn.loading .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        .scan-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-item {
             text-align: center;
         }
-        button {
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
             display: block;
-            width: 90%;
-            padding: 8px;
-            margin: 10px auto;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
         }
-        button:hover {
-            background-color: #2980b9;
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
         }
-        #issuesList {
-            margin-top: 15px;
+
+        .issues-container {
             max-height: 300px;
             overflow-y: auto;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
         }
-        .issue-item {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
+
+        .issues-container::-webkit-scrollbar {
+            width: 6px;
         }
-        .issue-item strong {
-            color: #e74c3c;
+
+        .issues-container::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .issue-item .suggestion {
-            margin-top: 5px;
-            font-style: italic;
-            color: #555;
-        }
-        .issue-item .fix-button {
-            background-color: #2ecc71;
-            margin-top: 10px;
-            width: auto;
-            padding: 5px 10px;
-            font-size: 12px;
-            display: inline-block; /* Allows multiple buttons on one line if space permits */
-        }
-        .issue-item .fix-button:hover {
-            background-color: #27ae60;
-        }
-        .issue-item input[type="text"] {
-            width: calc(100% - 22px); /* Account for padding */
-            padding: 5px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
+
+        .issues-container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
             border-radius: 3px;
         }
-        #message {
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-            margin-top: 10px;
+
+        .issue-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
-        .loading {
+
+        .issue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .issue-card.fixed {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: var(--success-color);
+        }
+
+        .issue-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .issue-type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .issue-type.missing-alt {
+            color: var(--danger-color);
+        }
+
+        .issue-type.contrast {
+            color: var(--warning-color);
+        }
+
+        .severity-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-high {
+            background: #fef2f2;
+            color: var(--danger-color);
+            border: 1px solid #fecaca;
+        }
+
+        .severity-medium {
+            background: #fefbf2;
+            color: var(--warning-color);
+            border: 1px solid #fed7aa;
+        }
+
+        .issue-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .fix-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .fix-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .fix-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .fix-btn:disabled {
+            background: var(--success-color);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
             text-align: center;
-            font-style: italic;
-            color: #888;
-            margin-top: 10px;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            color: var(--success-color);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--success-color);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--success-color) 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .highlight-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .highlight-indicator i {
+            color: var(--warning-color);
         }
     </style>
 </head>
 <body>
-    <h3>A11y Fix-It Assistant</h3>
-    <button id="scanButton">Scan Page for Issues</button>
-    <div id="message"></div>
-    <div id="issuesList">
-        <p class="loading" id="loadingMessage" style="display: none;">Scanning...</p>
+    <div class="header">
+        <h1><i class="fas fa-universal-access"></i> A11y Fix-It</h1>
+        <p>Making the web accessible for everyone</p>
+    </div>
+
+    <div class="main-content">
+        <div class="scan-section">
+            <button id="scanButton" class="scan-btn">
+                <i class="fas fa-spinner spinner"></i>
+                <span class="btn-text">
+                    <i class="fas fa-search"></i> Scan Page for Issues
+                </span>
+            </button>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
         </div>
-    <script src="popup.js"></script>
+
+        <div class="stats-bar" id="statsBar" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-number" id="totalIssues">0</span>
+                <span class="stat-label">Issues Found</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="fixedIssues">0</span>
+                <span class="stat-label">Fixed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="scorePercent">100%</span>
+                <span class="stat-label">Score</span>
+            </div>
+        </div>
+
+        <div id="issuesContainer">
+            <!-- Issues will be populated here -->
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class A11yExtensionUI {
+            constructor() {
+                this.issues = [];
+                this.fixedCount = 0;
+                this.init();
+            }
+
+            init() {
+                this.scanButton = document.getElementById('scanButton');
+                this.issuesContainer = document.getElementById('issuesContainer');
+                this.statsBar = document.getElementById('statsBar');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressFill = document.getElementById('progressFill');
+
+                this.scanButton.addEventListener('click', () => this.startScan());
+                this.setupMessageListener();
+            }
+
+            startScan() {
+                this.showLoading();
+                this.resetUI();
+                
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs.length > 0) {
+                        const activeTabId = tabs[0].id;
+                        chrome.runtime.sendMessage({ 
+                            action: "scanAccessibility", 
+                            tabId: activeTabId 
+                        }, (response) => {
+                            if (response && response.status) {
+                                console.log(response.status);
+                            }
+                        });
+                    } else {
+                        this.hideLoading();
+                        this.showToast('Could not find an active tab', 'error');
+                    }
+                });
+            }
+
+            showLoading() {
+                this.scanButton.classList.add('loading');
+                this.scanButton.disabled = true;
+                this.progressBar.style.display = 'block';
+                this.animateProgress();
+            }
+
+            hideLoading() {
+                this.scanButton.classList.remove('loading');
+                this.scanButton.disabled = false;
+                this.progressBar.style.display = 'none';
+                this.progressFill.style.width = '0%';
+            }
+
+            animateProgress() {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress >= 90) {
+                        clearInterval(interval);
+                        progress = 90;
+                    }
+                    this.progressFill.style.width = progress + '%';
+                }, 100);
+
+                // Complete progress when scan is done
+                this.progressInterval = interval;
+            }
+
+            completeProgress() {
+                if (this.progressInterval) {
+                    clearInterval(this.progressInterval);
+                }
+                this.progressFill.style.width = '100%';
+                setTimeout(() => this.hideLoading(), 500);
+            }
+
+            resetUI() {
+                this.issues = [];
+                this.fixedCount = 0;
+                this.issuesContainer.innerHTML = '';
+                this.statsBar.style.display = 'none';
+            }
+
+            setupMessageListener() {
+                chrome.runtime.onMessage.addListener((message) => {
+                    if (message.action === "displayIssues") {
+                        this.completeProgress();
+                        this.displayIssues(message.issues);
+                    }
+                });
+            }
+
+            displayIssues(issues) {
+                this.issues = issues;
+                
+                if (issues.length === 0) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                this.updateStats();
+                this.renderIssues();
+                this.showToast(`Found ${issues.length} accessibility issues`);
+            }
+
+            showEmptyState() {
+                this.issuesContainer.innerHTML = `
+                    <div class="empty-state fade-in">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Great job!</h4>
+                        <p>No accessibility issues found on this page.</p>
+                    </div>
+                `;
+                this.updateStats();
+            }
+
+            updateStats() {
+                const total = this.issues.length;
+                const fixed = this.fixedCount;
+                const score = total === 0 ? 100 : Math.round(((total - (total - fixed)) / total) * 100);
+
+                document.getElementById('totalIssues').textContent = total;
+                document.getElementById('fixedIssues').textContent = fixed;
+                document.getElementById('scorePercent').textContent = score + '%';
+
+                if (total > 0) {
+                    this.statsBar.style.display = 'flex';
+                    this.statsBar.classList.add('fade-in');
+                }
+            }
+
+            renderIssues() {
+                this.issuesContainer.innerHTML = '';
+                
+                this.issues.forEach((issue, index) => {
+                    const issueCard = this.createIssueCard(issue, index);
+                    this.issuesContainer.appendChild(issueCard);
+                });
+            }
+
+            createIssueCard(issue, index) {
+                const card = document.createElement('div');
+                card.className = 'issue-card fade-in';
+                card.style.animationDelay = `${index * 0.1}s`;
+
+                const severity = issue.type === 'missingAlt' ? 'high' : 'medium';
+                const severityLabel = severity === 'high' ? 'Critical' : 'Important';
+                const icon = issue.type === 'missingAlt' ? 'fa-image' : 'fa-eye';
+                const typeLabel = issue.type === 'missingAlt' ? 'Missing Alt Text' : 'Low Contrast';
+
+                card.innerHTML = `
+                    <div class="issue-header">
+                        <div class="issue-type ${issue.type === 'missingAlt' ? 'missing-alt' : 'contrast'}">
+                            <i class="fas ${icon}"></i>
+                            ${typeLabel}
+                        </div>
+                        <span class="severity-badge severity-${severity}">${severityLabel}</span>
+                    </div>
+                    
+                    <div class="issue-description">
+                        ${issue.suggestion}
+                        <div class="highlight-indicator">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Element highlighted on page
+                        </div>
+                    </div>
+                    
+                    <div class="fix-section">
+                        ${this.createFixSection(issue)}
+                    </div>
+                `;
+
+                return card;
+            }
+
+            createFixSection(issue) {
+                if (issue.type === 'missingAlt') {
+                    return `
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Enter descriptive alt text..."
+                                id="alt-input-${issue.id}"
+                                value="${issue.fixDetails.altText}"
+                            >
+                        </div>
+                        <button 
+                            class="fix-btn" 
+                            data-id="${issue.id}" 
+                            data-type="missingAlt"
+                        >
+                            <i class="fas fa-magic"></i> Apply Alt Text
+                        </button>
+                    `;
+                } else if (issue.type === 'contrast') {
+                    return `
+                        <button 
+                            class="fix-btn" 
+                            data-id="${issue.id}" 
+                            data-type="contrast" 
+                            data-color="${issue.fixDetails.suggestedColor}"
+                        >
+                            <i class="fas fa-palette"></i> Fix Contrast (Use ${issue.fixDetails.suggestedColor})
+                        </button>
+                    `;
+                }
+                return '';
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => document.body.removeChild(toast), 300);
+                }, 3000);
+            }
+        }
+
+        // Initialize the extension UI
+        document.addEventListener('DOMContentLoaded', () => {
+            const extensionUI = new A11yExtensionUI();
+
+            // Handle fix button clicks
+            document.addEventListener('click', (event) => {
+                if (event.target.classList.contains('fix-btn') || event.target.closest('.fix-btn')) {
+                    const button = event.target.classList.contains('fix-btn') ? event.target : event.target.closest('.fix-btn');
+                    
+                    const id = button.dataset.id;
+                    const type = button.dataset.type;
+                    let fixDetails = { id: id, type: type };
+
+                    if (type === 'missingAlt') {
+                        const altInput = document.getElementById(`alt-input-${id}`);
+                        fixDetails.altText = altInput ? altInput.value : 'Accessible Image';
+                        
+                        if (!fixDetails.altText.trim()) {
+                            extensionUI.showToast('Please enter alt text before applying fix', 'error');
+                            return;
+                        }
+                    } else if (type === 'contrast') {
+                        fixDetails.suggestedColor = button.dataset.color;
+                    }
+
+                    // Apply the fix
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        if (tabs.length > 0) {
+                            const activeTabId = tabs[0].id;
+                            chrome.runtime.sendMessage({ 
+                                action: "applyFix", 
+                                tabId: activeTabId, 
+                                fixDetails: fixDetails 
+                            }, (response) => {
+                                if (response && response.status) {
+                                    // Update UI to show fix was applied
+                                    const card = button.closest('.issue-card');
+                                    card.classList.add('fixed');
+                                    button.innerHTML = '<i class="fas fa-check"></i> Fixed!';
+                                    button.disabled = true;
+                                    
+                                    if (type === 'missingAlt') {
+                                        const altInput = document.getElementById(`alt-input-${id}`);
+                                        if (altInput) altInput.disabled = true;
+                                    }
+                                    
+                                    extensionUI.fixedCount++;
+                                    extensionUI.updateStats();
+                                    extensionUI.showToast('Fix applied successfully!');
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
