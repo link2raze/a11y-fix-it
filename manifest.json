@@ -4,6 +4,9 @@
   "version": "1.0",
   "description": "Identifies common accessibility issues and suggests interactive fixes.",
   "icons": {
+    "16": "asset/icons/icon.png",
+    "48": "asset/icons/icon.png",
+    "128": "asset/icons/icon.png"
   },
   "permissions": ["activeTab", "scripting"],
   "background": {
@@ -12,6 +15,8 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
+      "16": "asset/icons/icon.png",
+      "48": "asset/icons/icon.png"
     }
   },
   "host_permissions": ["<all_urls>"]

@@ -1,97 +1,442 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A11y Fix-It Assistant</title>
+    <link href="asset/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="popup.js"></script>
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --error-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-bg: #1a1a1a;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #2c3e50;
+            --text-muted: #6c757d;
+            --shadow-light: 0 8px 32px rgba(0,0,0,0.1);
+            --shadow-heavy: 0 20px 60px rgba(0,0,0,0.15);
+            --border-radius: 16px;
+        }
+
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            width: 300px;
-            padding: 10px;
-            background-color: #f4f7f6;
-            color: #333;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            width: 380px;
+            min-height: 500px;
+            padding: 0;
+            margin: 0;
+            background: var(--primary-gradient);
+            background-attachment: fixed;
+            position: relative;
+            overflow-x: hidden;
         }
-        h3 {
-            color: #2c3e50;
-            margin-top: 0;
-            text-align: center;
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%);
+            pointer-events: none;
         }
-        button {
-            display: block;
-            width: 90%;
-            padding: 8px;
-            margin: 10px auto;
-            background-color: #3498db;
+
+        .main-container {
+            position: relative;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-heavy);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            background: var(--primary-gradient);
             color: white;
+            font-weight: 700;
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .card-header i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        #scanButton {
+            background: var(--secondary-gradient);
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 15px 25px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            box-shadow: var(--shadow-light);
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
         }
-        button:hover {
-            background-color: #2980b9;
+
+        #scanButton::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
         }
-        #issuesList {
-            margin-top: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
+
+        #scanButton:hover::before {
+            left: 100%;
         }
+
+        #scanButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+
+        #scanButton:active {
+            transform: translateY(0);
+        }
+
+        #scanButton.scanning {
+            background: var(--success-gradient);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
         .issue-item {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
+            border: none;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out;
         }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .issue-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--error-gradient);
+        }
+
+        .issue-item.issue-fixed::before {
+            background: var(--success-gradient);
+        }
+
         .issue-item strong {
             color: #e74c3c;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .issue-item strong i {
+            font-size: 1.1rem;
+        }
+
         .issue-item .suggestion {
-            margin-top: 5px;
+            margin-top: 12px;
             font-style: italic;
-            color: #555;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding: 10px;
+            background: rgba(108, 117, 125, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #17a2b8;
         }
-        .issue-item .fix-button {
-            background-color: #2ecc71;
+
+        .element-snippet {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            word-break: break-all;
+            position: relative;
+        }
+
+        .fix-input {
+            width: 100%;
+            margin: 12px 0;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .fix-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .btn-fix {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
             margin-top: 10px;
-            width: auto;
-            padding: 5px 10px;
-            font-size: 12px;
-            display: inline-block; /* Allows multiple buttons on one line if space permits */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .issue-item .fix-button:hover {
-            background-color: #27ae60;
+
+        .btn-fix:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            color: white;
         }
-        .issue-item input[type="text"] {
-            width: calc(100% - 22px); /* Account for padding */
-            padding: 5px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
+
+        #issuesList {
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+        }
+
+        #issuesList::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #issuesList::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #issuesList::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
             border-radius: 3px;
         }
-        #message {
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-            margin-top: 10px;
+
+        #issuesList::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
         }
-        .loading {
+
+        .loading, #message {
             text-align: center;
-            font-style: italic;
-            color: #888;
-            margin-top: 10px;
+            font-size: 1rem;
+            margin: 20px 0;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .no-issues {
+            color: #27ae60;
+            font-weight: 600;
+            background: rgba(39, 174, 96, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .issue-fixed {
+            background: rgba(39, 174, 96, 0.1) !important;
+            border-color: #27ae60 !important;
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-ring {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--secondary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-heavy);
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .floating-action:hover {
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
-    <h3>A11y Fix-It Assistant</h3>
-    <button id="scanButton">Scan Page for Issues</button>
-    <div id="message"></div>
-    <div id="issuesList">
-        <p class="loading" id="loadingMessage" style="display: none;">Scanning...</p>
+    <div class="main-container">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-universal-access"></i>
+                A11y Fix-It Assistant
+            </div>
+            <div class="card-body">
+                <button id="scanButton" class="btn btn-block mb-3">
+                    <i class="fas fa-search"></i>
+                    Scan Page for Issues
+                </button>
+                
+                <div id="statsBar" class="stats-bar" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalIssues">0</div>
+                        <div class="stat-label">Issues</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="fixedIssues">0</div>
+                        <div class="stat-label">Fixed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="remainingIssues">0</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                </div>
+
+                <div id="message" class="mb-3"></div>
+                <div id="issuesList">
+                    <div class="loading" id="loadingMessage" style="display: none;">
+                        <i class="fas fa-spinner"></i>
+                        Scanning for accessibility issues...
+                    </div>
+                </div>
+            </div>
         </div>
-    <script src="popup.js"></script>
+    </div>
+
+   
 </body>
 </html>
